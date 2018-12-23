@@ -40,9 +40,8 @@ typedef enum
 } sw_coro_state;
 
 typedef void (*coro_php_create_t)();
-typedef void (*coro_php_yield_t)(void*);
-typedef void (*coro_php_resume_t)(void*);
-typedef void (*coro_php_close_t)();
+typedef void (*coro_on_swap_t)(void*);
+typedef void (*coro_on_close_t)();
 
 namespace swoole
 {
@@ -50,25 +49,23 @@ class Coroutine
 {
 private:
     long cid;
-    void *task;
+    void *task = nullptr;
     swoole::Context ctx;
 
 public:
-    sw_coro_state state;
+    sw_coro_state state = SW_CORO_INIT;
 
     Coroutine(long _cid, size_t stack_size, coroutine_func_t fn, void *private_data) :
             ctx(stack_size, fn, private_data)
     {
         cid = _cid;
-        task = nullptr;
-        state = SW_CORO_INIT;
     }
 
-    void resume();
     void yield();
+    void resume();
 
-    void resume_naked();
     void yield_naked();
+    void resume_naked();
 
     void release();
 
@@ -95,24 +92,14 @@ public:
 
 struct CoroutineG
 {
-    int stack_size;
-    int call_stack_size;
-    long last_cid;
+    int stack_size = SW_DEFAULT_C_STACK_SIZE;
+    int call_stack_size = 0;
+    long last_cid = 1;
     Coroutine* call_stack[SW_MAX_CORO_NESTING_LEVEL];
-    coro_php_yield_t onYield; /* before php yield coro */
-    coro_php_resume_t onResume; /* before php resume coro */
-    coro_php_close_t onClose; /* before php close coro */
+    coro_on_swap_t onYield = nullptr;   /* before yield coro */
+    coro_on_swap_t onResume = nullptr; /* before resume coro */
+    coro_on_close_t onClose = nullptr;   /* before close coro */
     std::unordered_map<long, Coroutine*> coroutines;
-
-    CoroutineG()
-    {
-        stack_size = SW_DEFAULT_C_STACK_SIZE;
-        call_stack_size = 0;
-        last_cid = 1;
-        onYield = nullptr;
-        onResume = nullptr;
-        onClose = nullptr;
-    }
 
     inline size_t count()
     {
@@ -132,18 +119,14 @@ swoole::Coroutine* coroutine_get_by_id(long cid); // TOOD: remove
 long coroutine_get_current_cid();
 void coroutine_set_stack_size(int stack_size);
 /* callback */
-void coroutine_set_onYield(coro_php_yield_t func);
-void coroutine_set_onResume(coro_php_resume_t func);
-void coroutine_set_onResumeBack(coro_php_resume_t func);
-void coroutine_set_onClose(coro_php_close_t func);
+void coroutine_set_onYield(coro_on_swap_t func);
+void coroutine_set_onResume(coro_on_swap_t func);
+void coroutine_set_onClose(coro_on_close_t func);
 void coroutine_print_list();
 
 inline static long coroutine_get_cid(swoole::Coroutine* co)
 {
     return co ? co->get_cid() : -1;
 }
-
-void internal_coro_yield(void *arg);
-void internal_coro_resume(void *arg);
 
 extern swoole::CoroutineG swCoroG;

@@ -35,7 +35,6 @@ long Coroutine::create(coroutine_func_t fn, void* args)
     co->ctx.SwapIn();
     if (co->ctx.end)
     {
-        co->state = SW_CORO_END;
         co->release();
     }
     return cid;
@@ -178,17 +177,17 @@ long coroutine_get_current_cid()
     return likely(co) ? co->get_cid() : -1;
 }
 
-void coroutine_set_onYield(coro_php_yield_t func)
+void coroutine_set_onYield(coro_on_swap_t func)
 {
     swCoroG.onYield = func;
 }
 
-void coroutine_set_onResume(coro_php_resume_t func)
+void coroutine_set_onResume(coro_on_swap_t func)
 {
     swCoroG.onResume = func;
 }
 
-void coroutine_set_onClose(coro_php_close_t func)
+void coroutine_set_onClose(coro_on_close_t func)
 {
     swCoroG.onClose = func;
 }
