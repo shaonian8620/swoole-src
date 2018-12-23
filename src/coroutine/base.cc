@@ -114,6 +114,7 @@ Coroutine* coroutine_get_by_cid(long cid)
     auto coroutine_iterator = swCoroG.coroutines.find(cid);
     if (coroutine_iterator == swCoroG.coroutines.end())
     {
+        SwooleG.error = SW_ERROR_CO_NOT_EXIST;
         return nullptr;
     }
     else

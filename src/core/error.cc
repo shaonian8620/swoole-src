@@ -179,6 +179,12 @@ const char* swstrerror(enum swErrorCode code)
         return "coroutine std thread link error";
     case SW_ERROR_CO_DISABLED_MULTI_THREAD:
         return "coroutine disabled multi thread";
+    case SW_ERROR_CO_NOT_EXIST:
+        return "coroutine not exist";
+    case SW_ERROR_CO_NONCANCELABLE_OPERATION:
+        return "coroutine noncancelable operation";
+    case SW_ERROR_CO_INTERRUPTED_BY_EXCEPTION:
+        return "coroutine aborted by exception";
     default: 
         return "Unknown error";
     }
