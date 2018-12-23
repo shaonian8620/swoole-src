@@ -89,6 +89,39 @@ static sw_inline void php_coro_restore_vm_stack(coro_task *task)
     SW_SET_EG_SCOPE(task->scope);
 }
 
+static void php_coro_exception_swap_origin(zval *zexception)
+{
+    zend_class_entry *ce = Z_OBJCE_P(zexception);
+    zval ztmp;
+    // swap
+    zend_update_property(ce, zexception, ZEND_STRL("originCid"), sw_zend_read_property(zend_ce_exception, zexception, ZEND_STRL("cid"), 1));
+    zend_update_property(ce, zexception, ZEND_STRL("originFile"), sw_zend_read_property(zend_ce_exception, zexception, ZEND_STRL("file"), 1));
+    zend_update_property(ce, zexception, ZEND_STRL("originLine"), sw_zend_read_property(zend_ce_exception, zexception, ZEND_STRL("line"), 1));
+    zend_update_property(ce, zexception, ZEND_STRL("originTrace"), sw_zend_read_property(zend_ce_exception, zexception, ZEND_STRL("trace"), 1));
+    ZVAL_LONG(&ztmp, coroutine_get_current_cid());
+    zend_update_property(zend_ce_exception, zexception, ZEND_STRL("cid"), &ztmp);
+    ZVAL_STRING(&ztmp, zend_get_executed_filename());
+    zend_update_property(zend_ce_exception, zexception, ZEND_STRL("file"), &ztmp);
+    zval_ptr_dtor(&ztmp);
+    ZVAL_LONG(&ztmp, zend_get_executed_lineno());
+    zend_update_property(zend_ce_exception, zexception, ZEND_STRL("line"), &ztmp);
+    zend_fetch_debug_backtrace(&ztmp, 0, 0, 0);
+    Z_SET_REFCOUNT(ztmp, 0);
+    zend_update_property(zend_ce_exception, zexception, ZEND_STRL("trace"), &ztmp);
+}
+
+static sw_inline void php_coro_handle_exception()
+{
+    if (COROG.exception)
+    {
+        zval zexception;
+        ZVAL_OBJ(&zexception, COROG.exception);
+        php_coro_exception_swap_origin(&zexception);
+        zend_throw_exception_object(&zexception);
+        COROG.exception = nullptr;
+    }
+}
+
 /**
  * The meaning of the task argument in coro switch functions
  *
@@ -176,17 +209,6 @@ static sw_inline void php_coro_og_close(coro_task *task)
     {
         php_coro_restore_og(task->origin_task);
     }
-}
-
-void coro_init(void)
-{
-    COROG.max_coro_num = SW_DEFAULT_MAX_CORO_NUM;
-    COROG.stack_size = SW_DEFAULT_STACK_SIZE;
-    COROG.socket_connect_timeout = SW_DEFAULT_SOCKET_CONNECT_TIMEOUT;
-    COROG.socket_timeout = SW_DEFAULT_SOCKET_TIMEOUT;
-    coroutine_set_onYield(internal_coro_yield);
-    coroutine_set_onResume(internal_coro_resume);
-    coroutine_set_onClose(sw_coro_close);
 }
 
 static void php_coro_create(void *arg)
@@ -316,7 +338,9 @@ static void php_coro_create(void *arg)
 
     if (UNEXPECTED(EG(exception)))
     {
-        zend_exception_error(EG(exception), E_ERROR);
+        ZVAL_OBJ(&_zobject, EG(exception));
+        zend_exception_error(EG(exception), E_WARNING);
+        zval_ptr_dtor(&_zobject);
     }
 }
 
@@ -336,22 +360,45 @@ static sw_inline void php_coro_resume(coro_task *task)
     swTraceLog(SW_TRACE_COROUTINE,"php_coro_resume from cid=%ld to cid=%ld", coroutine_get_cid(task->origin_task->co), coroutine_get_cid(task->co));
 }
 
+static sw_inline void php_coro_cancel(coro_task *task)
+{
+    php_coro_handle_exception();
+}
+
 static sw_inline void php_coro_close(coro_task *task)
 {
     php_coro_og_close(task);
     php_coro_restore_vm_stack(task->origin_task);
 }
 
-void internal_coro_resume(void *arg)
+static void internal_coro_yield(void *arg)
+{
+    coro_task *task = (coro_task *) arg;
+    php_coro_yield(task);
+}
+
+static void internal_coro_resume(void *arg)
 {
     coro_task *task = (coro_task *) arg;
     php_coro_resume(task);
 }
 
-void internal_coro_yield(void *arg)
+static void internal_coro_cancel(void *arg)
 {
     coro_task *task = (coro_task *) arg;
-    php_coro_yield(task);
+    php_coro_cancel(task);
+}
+
+void coro_init(void)
+{
+    COROG.max_coro_num = SW_DEFAULT_MAX_CORO_NUM;
+    COROG.stack_size = SW_DEFAULT_STACK_SIZE;
+    COROG.socket_connect_timeout = SW_DEFAULT_SOCKET_CONNECT_TIMEOUT;
+    COROG.socket_timeout = SW_DEFAULT_SOCKET_TIMEOUT;
+    coroutine_set_onYield(internal_coro_yield);
+    coroutine_set_onResume(internal_coro_resume);
+    coroutine_set_onCancel(internal_coro_cancel);
+    coroutine_set_onClose(sw_coro_close);
 }
 
 void coro_check(void)
@@ -442,17 +489,7 @@ int sw_coro_resume(php_context *sw_current_context, zval *retval, zval *coro_ret
     {
         ZVAL_COPY(SWCC(current_coro_return_value_ptr), retval);
     }
-
     task->co->resume_naked();
-
-    if (UNEXPECTED(EG(exception)))
-    {
-        if (retval)
-        {
-            zval_ptr_dtor(retval);
-        }
-        zend_exception_error(EG(exception), E_ERROR);
-    }
     return CORO_END;
 }
 

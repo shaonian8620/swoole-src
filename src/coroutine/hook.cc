@@ -633,20 +633,26 @@ int swoole_coroutine_flock(int fd, int operation)
     return ev.ret;
 }
 
-static void sleep_timeout(swTimer *timer, swTimer_node *tnode)
+static void sleep_timeout_callback(swTimer *timer, swTimer_node *tnode)
 {
     ((Coroutine *) tnode->data)->resume();
 }
 
-int Coroutine::sleep(double sec)
+static void sleep_cancel_callback(void *data)
+{
+    swTimer_node* tnode = (swTimer_node *) data;
+    swTimer_del(&SwooleG.timer, tnode);
+}
+
+bool Coroutine::sleep(double sec)
 {
     Coroutine* co = coroutine_get_current();
-    if (swTimer_add(&SwooleG.timer, sec * 1000, 0, co, sleep_timeout) == NULL)
+    swTimer_node* tnode = swTimer_add(&SwooleG.timer, sec * 1000, 0, co, sleep_timeout_callback);
+    if (unlikely(tnode == NULL))
     {
-        return -1;
+        return false;
     }
-    co->yield();
-    return 0;
+    return co->yield(sleep_cancel_callback, tnode);
 }
 
 swString* Coroutine::read_file(const char *file, int lock)

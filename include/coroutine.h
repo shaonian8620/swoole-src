@@ -51,6 +51,8 @@ private:
     long cid;
     void *task = nullptr;
     swoole::Context ctx;
+    bool cancelable = false;
+    bool canceled = false;
 
 public:
     sw_coro_state state = SW_CORO_INIT;
@@ -63,6 +65,9 @@ public:
 
     void yield();
     void resume();
+
+    bool yield(coro_on_swap_t on_cancel, void *data = nullptr);
+    bool cancel();
 
     void yield_naked();
     void resume_naked();
@@ -84,8 +89,18 @@ public:
         return task;
     }
 
+    inline bool is_cancelable()
+    {
+        return cancelable;
+    }
+
+    inline bool was_cancelled()
+    {
+        return canceled;
+    }
+
     static long create(coroutine_func_t fn, void* args = nullptr);
-    static int sleep(double sec);
+    static bool sleep(double sec);
     static swString* read_file(const char *file, int lock);
     static ssize_t write_file(const char *file, char *buf, size_t length, int lock, int flags);
 };
@@ -98,6 +113,7 @@ struct CoroutineG
     Coroutine* call_stack[SW_MAX_CORO_NESTING_LEVEL];
     coro_on_swap_t onYield = nullptr;   /* before yield coro */
     coro_on_swap_t onResume = nullptr; /* before resume coro */
+    coro_on_swap_t onCancel = nullptr;   /* after cancel coro */
     coro_on_close_t onClose = nullptr;   /* before close coro */
     std::unordered_map<long, Coroutine*> coroutines;
 
@@ -120,6 +136,7 @@ long coroutine_get_current_cid();
 void coroutine_set_stack_size(int stack_size);
 /* callback */
 void coroutine_set_onYield(coro_on_swap_t func);
+void coroutine_set_onCancel(coro_on_swap_t func);
 void coroutine_set_onResume(coro_on_swap_t func);
 void coroutine_set_onClose(coro_on_close_t func);
 void coroutine_print_list();

@@ -539,6 +539,13 @@ static int socket_event_callback(swReactor *reactor, swEvent *event)
     return SW_OK;
 }
 
+static void socket_cancel_callback(void *data)
+{
+    Socket *sock = (Socket *) data;
+    sock->set_err(ECANCELED);
+    sock->reactor->del(sock->reactor, sock->socket->fd);
+}
+
 bool Socket::is_connect()
 {
     return socket->active && !socket->closed;

@@ -1,14 +1,12 @@
 #pragma once
 
 #include "coroutine.h"
-#include "zend_vm.h"
+
+#include "zend_builtin_functions.h"
 #include "zend_closures.h"
+#include "zend_vm.h"
 
 #include <stack>
-
-#define SW_EX_CV_NUM(ex, n) (((zval ***)(((char *)(ex)) + ZEND_MM_ALIGNED_SIZE(sizeof(zend_execute_data)))) + n)
-#define SW_EX_CV(var) (*SW_EX_CV_NUM(execute_data, var))
-
 
 typedef enum
 {
@@ -36,15 +34,15 @@ struct defer_task
     swCallback callback;
     void *data;
 
-    defer_task(swCallback _callback, void *_data):
-        callback(_callback), data(_data)
+    defer_task(swCallback _callback, void *_data) :
+            callback(_callback), data(_data)
     {
-
     }
 };
 
 struct coro_task
 {
+    /** php switcher **/
     zval *vm_stack_top;
     zval *vm_stack_end;
     zend_vm_stack vm_stack;
@@ -54,9 +52,11 @@ struct coro_task
     zend_object *exception;
     zend_output_globals *output_ptr;
     SW_DECLARE_EG_SCOPE(scope);
+
+    /** swoole members **/
     swoole::Coroutine *co;
-    std::stack<defer_task *> *defer_tasks;
     coro_task *origin_task;
+    std::stack<defer_task *> *defer_tasks;
 };
 
 struct php_args
@@ -76,6 +76,7 @@ struct coro_global
     double socket_connect_timeout;
     double socket_timeout;
     coro_task task;
+    zend_object *exception;
 };
 
 // TODO: remove php context

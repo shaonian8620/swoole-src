@@ -51,6 +51,24 @@ void Coroutine::yield()
     ctx.SwapOut();
 }
 
+bool Coroutine::yield(coro_on_swap_t on_cancel, void *data)
+{
+    cancelable = true;
+    canceled = false;
+    yield();
+    cancelable = false;
+    if (canceled)
+    {
+        on_cancel(data);
+        if (swCoroG.onCancel)
+        {
+            swCoroG.onCancel(task);
+        }
+        return false;
+    }
+    return true;
+}
+
 void Coroutine::resume()
 {
     state = SW_CORO_RUNNING;
@@ -64,6 +82,18 @@ void Coroutine::resume()
     {
         release();
     }
+}
+
+bool Coroutine::cancel()
+{
+    if (!cancelable)
+    {
+        SwooleG.error = SW_ERROR_CO_NONCANCELABLE_OPERATION;
+        return false;
+    }
+    canceled = true;
+    resume();
+    return true;
 }
 
 void Coroutine::yield_naked()
@@ -186,6 +216,11 @@ void coroutine_set_onYield(coro_on_swap_t func)
 void coroutine_set_onResume(coro_on_swap_t func)
 {
     swCoroG.onResume = func;
+}
+
+void coroutine_set_onCancel(coro_on_swap_t func)
+{
+    swCoroG.onCancel = func;
 }
 
 void coroutine_set_onClose(coro_on_close_t func)
