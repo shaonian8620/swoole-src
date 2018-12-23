@@ -353,7 +353,7 @@ bool Socket::connect(const struct sockaddr *addr, socklen_t addrlen)
     int retval = socket_connect(socket->fd, addr, addrlen);
     if (retval == -1)
     {
-        if (errno != EINPROGRESS || !wait_event(SW_EVENT_WRITE))
+        if (errno != EINPROGRESS)
         {
             set_err(errno);
             return false;
