@@ -211,6 +211,32 @@ static sw_inline void php_coro_og_close(coro_task *task)
     }
 }
 
+static void php_coro_warn_exception(long cid)
+{
+    zval zexception, zstr, *ztmp;
+    zend_object *exception = EG(exception);
+    char *error_filename;
+    uint32_t error_lineno;
+
+    EG(exception) = NULL;
+    ZVAL_OBJ(&zexception, exception);
+    zend_call_method_with_0_params(&zexception, exception->ce, &exception->ce->__tostring, "__tostring", &zstr);
+    convert_to_string(&zstr);
+    ztmp = sw_zend_read_property(zend_ce_exception, &zexception, ZEND_STRL("file"), 1);
+    convert_to_string(ztmp);
+    error_filename = Z_STRVAL_P(ztmp);
+    ztmp = sw_zend_read_property(zend_ce_exception, &zexception, ZEND_STRL("line"), 1);
+    convert_to_long(ztmp);
+    error_lineno = Z_LVAL_P(ztmp);
+    sw_zend_error_helper(
+        E_WARNING, error_filename, error_lineno,
+        "[Coroutine#%ld] Uncaught %s\n  thrown", cid, Z_STRVAL(zstr)
+    );
+    zval_ptr_dtor(&zstr);
+    GC_SET_REFCOUNT(exception, 1);
+    OBJ_RELEASE(exception);
+}
+
 static void php_coro_create(void *arg)
 {
     int i;
@@ -335,9 +361,14 @@ static void php_coro_create(void *arg)
 
     if (UNEXPECTED(EG(exception)))
     {
-        ZVAL_OBJ(&_zobject, EG(exception));
-        zend_exception_error(EG(exception), E_WARNING);
-        zval_ptr_dtor(&_zobject);
+        if (UNEXPECTED(!instanceof_function(EG(exception)->ce, zend_ce_exception)))
+        {
+            zend_exception_error(EG(exception), E_ERROR);
+        }
+        else
+        {
+            php_coro_warn_exception(task->co->get_cid());
+        }
     }
 }
 
