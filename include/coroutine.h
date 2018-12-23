@@ -126,7 +126,8 @@ void* coroutine_get_current_task();
 void* coroutine_get_task_by_cid(long cid);
 /* get coroutine */
 swoole::Coroutine* coroutine_get_current();
-swoole::Coroutine* coroutine_get_by_id(long cid);
+swoole::Coroutine* coroutine_get_by_cid(long cid);
+swoole::Coroutine* coroutine_get_by_id(long cid); // TOOD: remove
 /* get cid */
 long coroutine_get_current_cid();
 void coroutine_set_stack_size(int stack_size);

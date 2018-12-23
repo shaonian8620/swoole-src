@@ -99,7 +99,7 @@ void Coroutine::release()
 
 void* coroutine_get_task_by_cid(long cid)
 {
-    Coroutine *co = coroutine_get_by_id(cid);
+    Coroutine *co = coroutine_get_by_cid(cid);
     if (co == nullptr)
     {
         return nullptr;
@@ -110,7 +110,7 @@ void* coroutine_get_task_by_cid(long cid)
     }
 }
 
-Coroutine* coroutine_get_by_id(long cid)
+Coroutine* coroutine_get_by_cid(long cid)
 {
     auto coroutine_iterator = swCoroG.coroutines.find(cid);
     if (coroutine_iterator == swCoroG.coroutines.end())
@@ -121,6 +121,11 @@ Coroutine* coroutine_get_by_id(long cid)
     {
         return coroutine_iterator->second;
     }
+}
+
+Coroutine* coroutine_get_by_id(long cid)
+{
+    return coroutine_get_by_cid(cid);
 }
 
 Coroutine* coroutine_get_current()

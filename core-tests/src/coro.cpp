@@ -7,11 +7,11 @@ TEST(coroutine, create)
     long cid = Coroutine::create([](void *arg)
     {
         long cid = coroutine_get_current_cid();
-        Coroutine *co = coroutine_get_by_id(cid);
+        Coroutine *co = coroutine_get_by_cid(cid);
         co->yield();
     });
     ASSERT_GT(cid, 0);
-    coroutine_get_by_id(cid)->resume();
+    coroutine_get_by_cid(cid)->resume();
 }
 
 TEST(coroutine, socket_connect_refused)
