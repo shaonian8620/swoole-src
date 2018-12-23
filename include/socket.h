@@ -185,6 +185,11 @@ public:
         }
     }
 
+    inline void resume()
+    {
+        bind_co->resume();
+    }
+
 protected:
     double _timeout;
     double _timeout_temp;
@@ -270,11 +275,6 @@ protected:
     }
 
     inline void init_sock(int _fd);
-
-    inline void resume()
-    {
-        bind_co->resume();
-    }
 
     inline bool is_available(bool allow_cross_co = false)
     {
