@@ -1050,10 +1050,9 @@ static sw_inline char* sw_http_build_query(zval *zdata, size_t *length, smart_st
     return formstr->s->val;
 }
 
-static sw_inline void sw_zend_error_helper(int type, const char *filename, const uint32_t lineno, const char *format, ...)
+static void sw_zend_error_helper(int type, const char *filename, const uint32_t lineno, const char *format, ...)
 {
     va_list va;
-
     va_start(va, format);
     zend_error_cb(type, filename, lineno, format, va);
     va_end(va);
