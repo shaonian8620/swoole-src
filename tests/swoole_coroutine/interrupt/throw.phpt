@@ -24,14 +24,14 @@ go(function () use ($sleep, $socket_io) {
 
 ?>
 --EXPECTF--
-Warning: Uncaught Swoole\Coroutine\Exception: the coroutine was interrupted by an exception from cid#3. in %s/tests/swoole_coroutine/interrupted/throw.php:5
+Warning: Uncaught Swoole\Coroutine\Exception: the coroutine was interrupted by an exception from cid#3. in %s/tests/swoole_coroutine/interrupt/throw.php:5
 Stack trace:
-#0 %s/tests/swoole_coroutine/interrupted/throw.php(5): Swoole\Coroutine::sleep(999)
+#0 %s/tests/swoole_coroutine/interrupt/throw.php(5): Swoole\Coroutine::sleep(999)
 #1 {main}
-  thrown in %s/tests/swoole_coroutine/interrupted/throw.php on line 5
+  thrown in %s/tests/swoole_coroutine/interrupt/throw.php on line 5
 
-Warning: Uncaught Swoole\Coroutine\Exception: the coroutine was interrupted by an exception from cid#3. in %s/tests/swoole_coroutine/interrupted/throw.php:11
+Warning: Uncaught Swoole\Coroutine\Exception: the coroutine was interrupted by an exception from cid#3. in %s/tests/swoole_coroutine/interrupt/throw.php:11
 Stack trace:
-#0 %s/tests/swoole_coroutine/interrupted/throw.php(11): Swoole\Coroutine\Socket->recvfrom(NULL, -1)
+#0 %s/tests/swoole_coroutine/interrupt/throw.php(11): Swoole\Coroutine\Socket->recvfrom(NULL, -1)
 #1 {main}
-  thrown in %s/tests/swoole_coroutine/interrupted/throw.php on line 11
+  thrown in %s/tests/swoole_coroutine/interrupt/throw.php on line 11
