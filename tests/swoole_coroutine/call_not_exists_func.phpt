@@ -13,12 +13,10 @@ $pm->childFunc = function () use ($pm) {
     $http = new swoole_http_server('127.0.0.1', $pm->getFreePort(), SWOOLE_BASE);
     $http->set(['worker_num' => 1]);
     $http->on('workerStart', function () use ($pm) {
-        none();
         $pm->wakeup();
     });
     $http->on('request', function (swoole_http_request $request, swoole_http_response $response) {
-        co::sleep(0.001);
-        throw new Exception('whoops');
+        none();
     });
     $http->start();
 };
@@ -26,11 +24,11 @@ $pm->childFirst();
 $pm->run();
 ?>
 --EXPECTF--
-Fatal error: Uncaught Error: Call to undefined function none() in %s/tests/swoole_coroutine/call_not_exists_func.php:11
+Fatal error: Uncaught Error: Call to undefined function none() in %s/tests/swoole_coroutine/call_not_exists_func.php:14
 Stack trace:
 #0 {main}
-  thrown in %s/tests/swoole_coroutine/call_not_exists_func.php on line 11
-%s
+  thrown in %s/tests/swoole_coroutine/call_not_exists_func.php on line 14
+[%s]	ERROR	zm_deactivate_swoole (ERROR 503): Fatal error: Uncaught Error: Call to undefined function none() in %s/tests/swoole_coroutine/call_not_exists_func.php:14
 Stack trace:
 #0 {main}
-  thrown in %s/tests/swoole_coroutine/call_not_exists_func.php on line 11.
+  thrown in %s/tests/swoole_coroutine/call_not_exists_func.php on line 14.

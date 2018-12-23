@@ -20,4 +20,4 @@ echo "main\n";
 
 ?>
 --EXPECTF--
-Fatal error: Swoole\Coroutine::yield(): can not yield outside coroutine %s
+Fatal error: Swoole\Coroutine::yield(): can not yield outside coroutine. %s

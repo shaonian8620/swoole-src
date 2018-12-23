@@ -1,22 +1,24 @@
 --TEST--
 swoole_coroutine: error
 --SKIPIF--
-<?php require  __DIR__ . '/../../include/skipif.inc'; ?>
+<?php require __DIR__ . '/../../include/skipif.inc'; ?>
 --FILE--
 <?php
 require __DIR__ . '/../../include/bootstrap.php';
 go(function () {
     echo "start\n";
-    throw new Exception('coro Exception');
+    throw new Error('fatal error');
+});
+go(function () {
+    throw new Exception('exception');
     co::sleep(.001);
     echo "after sleep\n";
 });
-echo "end\n";
 ?>
 --EXPECTF--
 start
 
-Fatal error: Uncaught Exception: coro Exception %s
+Fatal error: Uncaught Error: fatal error in /Users/twosee/Toast/swoole-src/tests/swoole_coroutine/exception/error.php:5
 Stack trace:
 #0 {main}
-  thrown in %s/tests/swoole_coroutine/exception/error.php on line 5
+  thrown in /Users/twosee/Toast/swoole-src/tests/swoole_coroutine/exception/error.php on line 5

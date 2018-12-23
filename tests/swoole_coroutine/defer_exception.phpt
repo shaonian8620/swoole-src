@@ -36,7 +36,7 @@ zha
 defer 2
 defer 1
 
-Fatal error: Uncaught Exception: something wrong in %s:%d
+Warning: [Coroutine#2] Uncaught Exception: something wrong in %s/swoole_coroutine/defer_exception.php:22
 Stack trace:
 #0 {main}
-  thrown in %s/tests/swoole_coroutine/defer_exception.php on line %d
+  thrown in %s/swoole_coroutine/defer_exception.php on line 22

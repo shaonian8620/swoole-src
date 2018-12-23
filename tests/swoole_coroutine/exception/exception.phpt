@@ -1,13 +1,19 @@
 --TEST--
 swoole_coroutine: throw exception
 --SKIPIF--
-<?php require __DIR__ . '/../include/skipif.inc'; ?>
+<?php require __DIR__ . '/../../include/skipif.inc'; ?>
 --FILE--
 <?php
-require __DIR__ . '/../include/bootstrap.php';
+require __DIR__ . '/../../include/bootstrap.php';
 $pm = new ProcessManager;
-$pm->parentFunc = function (int $pid) use ($pm) {
-    echo curlGet("http://127.0.0.1:{$pm->getFreePort()}/");
+$pm->parentFunc = function () use ($pm) {
+    go(function () use ($pm) {
+        $cli = new Swoole\Coroutine\Http\Client('127.0.0.1', $pm->getFreePort());
+        $cli->set(['timeout' => 5]);
+        assert($cli->get('/'));
+        assert($cli->statusCode === 500);
+        $pm->kill();
+    });
 };
 $pm->childFunc = function () use ($pm) {
     $http = new swoole_http_server('127.0.0.1', $pm->getFreePort(), SWOOLE_BASE);
@@ -25,11 +31,7 @@ $pm->childFirst();
 $pm->run();
 ?>
 --EXPECTF--
-Fatal error: Uncaught Exception: whoops in %s/tests/swoole_coroutine/exception.php:15
+Warning: [Coroutine#2] Uncaught Exception: whoops in %s/swoole_coroutine/exception/exception.php:21
 Stack trace:
 #0 {main}
-  thrown in %s/tests/swoole_coroutine/exception.php on line 15
-[%s]	ERROR	zm_deactivate_swoole (ERROR 503): Fatal error: Uncaught Exception: whoops in %s/tests/swoole_coroutine/exception.php:15
-Stack trace:
-#0 {main}
-  thrown in %s/tests/swoole_coroutine/exception.php on line 15.
+  thrown in %s/swoole_coroutine/exception/exception.php on line 21
