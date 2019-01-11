@@ -38,7 +38,7 @@ prepare_data_files(){
     mkdir -p \
     data \
     data/run \
-    data/mysqld data/run/mysql \
+    data/mysqld data/run/mysqld \
     data/redis data/run/redis && \
     chmod -R 777 data
 }
