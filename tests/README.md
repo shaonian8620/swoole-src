@@ -2,6 +2,14 @@
 
 Run these tests to make certain that the swoole extension you installed can work well.
 
+## Preparation
+try to run `./init` to initialize the databases.
+
+| type  | user | password | database |
+| ----- | ---- | -------- | -------- |
+| mysql | root | root     | test     |
+| redis | -    | -        | -        |
+
 ## How to run
 1. just run `./start.sh`
 2. or use`./start.sh ./swoole_*` command to run a part of the tests

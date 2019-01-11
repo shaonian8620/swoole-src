@@ -53,9 +53,9 @@ before_script:
   - pwd
   - echo "`git log -20 --pretty --oneline`"
   - echo "`git log -10 --stat --pretty --oneline`"
-  - ./travis/pecl-install.sh
-  - ./travis/simple-compile.sh
-  - php --ri swoole
+  # - ./travis/pecl-install.sh
+  # - ./travis/simple-compile.sh
+  # - php --ri swoole
 
 script:
   - ./travis/route.sh
