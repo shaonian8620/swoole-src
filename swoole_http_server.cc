@@ -246,7 +246,7 @@ static inline long http_fast_parse(swoole_http_parser *parser, char *data, size_
 #endif
 
 static PHP_METHOD(swoole_http_request, getData);
-static PHP_METHOD(swoole_http_request, rawcontent);
+static PHP_METHOD(swoole_http_request, rawContent);
 static PHP_METHOD(swoole_http_request, __destruct);
 
 static PHP_METHOD(swoole_http_response, write);
@@ -413,7 +413,7 @@ static const multipart_parser_settings mt_parser_settings =
 
 const zend_function_entry swoole_http_request_methods[] =
 {
-    PHP_ME(swoole_http_request, rawcontent, arginfo_swoole_http_void, ZEND_ACC_PUBLIC)
+    PHP_ME(swoole_http_request, rawContent, arginfo_swoole_http_void, ZEND_ACC_PUBLIC)
     PHP_ME(swoole_http_request, getData, arginfo_swoole_http_void, ZEND_ACC_PUBLIC)
     PHP_ME(swoole_http_request, __destruct, arginfo_swoole_http_void, ZEND_ACC_PUBLIC)
     PHP_FE_END
@@ -1398,7 +1398,7 @@ void php_swoole_http_server_before_start(swServer *serv, zval *zobject)
     zend_hash_init(SG(rfc1867_uploaded_files), 8, NULL, NULL, 0);
 }
 
-static PHP_METHOD(swoole_http_request, rawcontent)
+static PHP_METHOD(swoole_http_request, rawContent)
 {
     http_context *ctx = http_get_context(getThis(), 0);
     if (!ctx)
@@ -2114,10 +2114,11 @@ static PHP_METHOD(swoole_http_response, sendfile)
 
 static void swoole_http_response_cookie(INTERNAL_FUNCTION_PARAMETERS, bool url_encode = true)
 {
-    char *name, *value = NULL, *path = NULL, *domain = NULL;
+    char *name, *value = NULL, *encoded_value = NULL, *path = NULL, *domain = NULL;
     zend_long expires = 0;
     size_t name_len, value_len = 0, path_len = 0, domain_len = 0;
     zend_bool secure = 0, httponly = 0;
+    int encoded_value_len = 0;
 
     ZEND_PARSE_PARAMETERS_START(1, 7)
         Z_PARAM_STRING(name, name_len)
@@ -2141,9 +2142,15 @@ static void swoole_http_response_cookie(INTERNAL_FUNCTION_PARAMETERS, bool url_e
     {
         swoole_http_server_array_init(cookie, response);
     }
+    if (url_encode && value_len)
+    {
+        encoded_value = sw_php_url_encode(value, value_len, &encoded_value_len);
+    } else {
+        encoded_value_len = value_len;
+    }
 
-    int cookie_size = name_len + value_len + path_len + domain_len + 100;
-    char *cookie = (char *) emalloc(cookie_size), *encoded_value = NULL, *date = NULL;
+    int cookie_size = name_len + encoded_value_len + path_len + domain_len + 100;
+    char *cookie = (char *) emalloc(cookie_size), *date = NULL;
 
     if (name_len > 0 && strpbrk(name, "=,; \t\r\n\013\014") != NULL)
     {
@@ -2158,11 +2165,6 @@ static void swoole_http_response_cookie(INTERNAL_FUNCTION_PARAMETERS, bool url_e
     }
     else
     {
-        if (url_encode)
-        {
-            int encoded_value_len;
-            encoded_value = sw_php_url_encode(value, value_len, &encoded_value_len);
-        }
         snprintf(cookie, cookie_size, "%s=%s", name, encoded_value ? encoded_value : value);
         if (expires > 0)
         {
